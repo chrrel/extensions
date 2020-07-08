@@ -1,0 +1,10 @@
+---
+- hosts: scanservers
+  vars_files:
+    - variables.yml
+  tasks:
+    - name: Download log files from servers
+      synchronize:
+        src: "/home/{{ os_user }}/extensions/data/"
+        dest: "../../extensions-logs/{{ansible_hostname}}/"
+        mode: pull

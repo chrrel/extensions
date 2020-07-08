@@ -1,0 +1,98 @@
+---
+- hosts: dbservers
+  vars_files:
+    - variables.yml
+  become: yes
+  become_user: "{{ os_user }}"
+  tasks:
+    - name: Update and upgrade apt packages
+      become: yes
+      become_user: root
+      apt:
+        upgrade: "yes"
+        update_cache: yes
+        cache_valid_time: 86400 # one day
+    - name: Install apt packages for database
+      become: yes
+      become_user: root
+      apt:
+        name: ["python3-pip", "libpq-dev", "python3-dev", "postgresql", "postgresql-contrib", "python3-psycopg2"]
+        update_cache: yes
+        cache_valid_time: 86400 # one day
+    # Make some space by uninstalling unnecessary things
+    - name: Ensure snapd is uninstalled
+      become: yes
+      become_user: root
+      apt:
+        name: snapd
+        state: absent
+        purge: yes
+    - name: Clean up using apt autoremove
+      become: yes
+      become_user: root
+      apt:
+        autoremove: yes
+    - name: Clean up using apt clean
+      become: yes
+      become_user: root
+      command: apt clean
+    # Cronjob
+    - name: Create a cronjob that executes fstrim /
+      become: yes
+      become_user: root
+      cron:
+        name: "fstrim"
+        minute: "35"
+        hour: "*"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        job: "/sbin/fstrim /"
+    # DB
+    - name: Install pip module psycopg2
+      pip:
+        name: psycopg2==2.8.4
+    - name: Ensure a database is created/exists
+      become: yes
+      become_user: "{{ db_user }}"
+      postgresql_db:
+        name: "{{ db_name }}"
+        encoding: UTF-8
+        lc_collate: en_US.UTF-8
+        lc_ctype: en_US.UTF-8
+        state: present
+    - name: Connect to scanresults database, create user and grant access to database
+      become: yes
+      become_user: "{{ db_user }}"
+      postgresql_user:
+        db: "{{ db_name }}"
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+    - name: Config - change listen_addresses to '*' in postgresql.conf
+      become: yes
+      become_user: root
+      lineinfile:
+        path: /etc/postgresql/10/main/postgresql.conf
+        regexp: "^#listen_addresses"
+        line: "listen_addresses = '*'"
+        state: present
+        backup: yes
+    - name: Config - allow scanservers in 192.168.122.0/24 to access the database in pg_hba.conf
+      become: yes
+      become_user: root
+      postgresql_pg_hba:
+        dest: /etc/postgresql/10/main/pg_hba.conf
+        contype: host
+        users: all
+        databases: all
+        address: 192.168.122.0/24
+        method: md5
+        create: yes
+        backup: "yes"
+    - name: Ensure postgres is restarted
+      become: yes
+      become_user: root
+      service:
+        name: postgresql
+        state: restarted
+        enabled: yes

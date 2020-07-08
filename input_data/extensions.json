@@ -1,0 +1,40 @@
+[
+	{
+	 	"browser": "chrome",
+	 	"risk": "cookies",
+	 	"extension": "aopfgjfeiimeioiajeknfidlljpoebgc",
+	 	"via": "content_scripts",
+	 	"messages": [
+	 		["Action", "background", "y"],
+			[{"Action": "GETCOOKIE"}],
+			[{"Action": "CLEARCOOKIE"}]
+		]
+	},
+		{
+		"browser": "chrome",
+		"risk": "history",
+		"extension": "afddmpnodjaifgjibafjcbfaplnoipei",
+		"via": "background",
+		"messages": [
+			[{"type": "history", "act": "get_all"}],
+			[{"type": "history", "act": "delete_all"}],
+			[{"type": "bookmarks", "act": "get_all"}],
+			[{"type": "bookmarks", "act": "delete_all"}],
+			[{"type": "extensions", "act": "get_all"}],
+			[{"type": "extensions", "act": "status"}],
+			[{"type": "extensions", "act": "unninstall"}],		
+			[{"type": "LS"}],
+			[{"type": "LS"}]
+		]
+	},
+	{
+		"browser": "chrome",
+		"risk": "xss",
+		"extension": "fimckmjeammfdcpldmcigeojkkmeeian",
+		"via": "",
+	 	"messages": [
+			[{"from": "logininfo"}],
+			[{"type": "getResumeInfo"}]
+		]
+	}
+]

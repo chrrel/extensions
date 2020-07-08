@@ -1,0 +1,18 @@
+[scanservers]
+# These are the servers that are used to perform the scans (without the database server)
+extscan01 ansible_host=192.168.122.205     
+extscan02 ansible_host=192.168.122.75
+
+[dbservers]
+# This is the database server
+extscandb ansible_host=192.168.122.252
+
+[all:vars]
+# Make sure that python3 is used
+ansible_python_interpreter=/usr/bin/python3
+# Use jump server to connect to servers if necessary
+# 'extscan-jump' refers to an entry in the SSH config file
+# ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q extscan-jump"'
+# Define SSH user
+ansible_user=myoperatingsystemuser
+

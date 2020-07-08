@@ -1,0 +1,6 @@
+---
+os_user: myoperatingsystemuser
+db_user: postgres
+db_password: kjhfWuegwgheff.56
+db_name: scanresults
+git_repository: git@github.com:chrrel/extensions.git

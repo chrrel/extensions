@@ -1,0 +1,111 @@
+---
+- hosts: scanservers
+  order: sorted
+  vars_files:
+    - variables.yml
+  become: yes
+  become_user: "{{ os_user }}"
+  tasks:
+    # Install software
+    - name: Update and upgrade apt packages
+      become: yes
+      become_user: root
+      apt:
+        upgrade: "yes"
+        update_cache: yes
+        cache_valid_time: 86400 # one day
+    - name: Install apt packages
+      become: yes
+      become_user: root
+      apt:
+        name: ["python3-pip", "libpq-dev", "python3-dev", "chromium-browser", "git"]
+        update_cache: yes
+        cache_valid_time: 86400 # one day
+    # Make some space by uninstalling unnecessary things
+    - name: Ensure snapd is uninstalled
+      become: yes
+      become_user: root
+      apt:
+        name: snapd
+        state: absent
+        purge: yes
+    - name: Clean up using apt autoremove
+      become: yes
+      become_user: root
+      apt:
+        autoremove: yes
+    - name: Clean up using apt clean
+      become: yes
+      become_user: root
+      command: apt clean
+    # Upload SSH keys
+    - name: Place SSH deploy key
+      copy:
+        src: files/id_rsa_deploy
+        dest: "/home/{{ os_user }}/.ssh/id_rsa_deploy"
+        owner: "{{ os_user }}"
+        group: "{{ os_user }}"
+        mode: 0600
+    - name: Place SSH deploy public key
+      copy:
+        src: files/id_rsa_deploy.pub
+        dest: "/home/{{ os_user }}/.ssh/id_rsa_deploy.pub"
+        owner: "{{ os_user }}"
+        group: "{{ os_user }}"
+        mode: 0600
+    # Git
+    - name: Clone Git repo
+      become: yes
+      become_user: "{{ os_user }}"
+      git:
+        repo: "{{ git_repository }}"
+        dest: "/home/{{ os_user }}/extensions"
+        force: yes
+        accept_hostkey: yes
+        key_file: "/home/{{ os_user }}/.ssh/id_rsa_deploy"
+    # Config file
+    - name: Upload config file from localhost
+      copy:
+        src: ../scanner/config.cfg
+        dest: "/home/{{ os_user }}/extensions/scanner/config.cfg"
+        owner: "{{ os_user }}"
+        group: "{{ os_user }}"
+        mode: 0600
+    # Pip install (must be after git clone)
+    - name: Install pip modules from requirements.txt
+      pip:
+        requirements: "/home/{{ os_user }}/extensions/scanner/requirements.txt"
+    # Cronjobs
+    - name: Create a cronjob that executes fstrim /
+      become: yes
+      become_user: root
+      cron:
+        name: "fstrim"
+        minute: "5"
+        hour: "*"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        job: "/sbin/fstrim /"
+    - name: Create a cronjob that deletes the chromium error log file if it becomes too large
+      cron:
+        name: "delete chromium log"
+        minute: "0,15,30,45"
+        hour: "*"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        job: "/usr/bin/find /home/{{ os_user }}/extensions/data/ -type f -name '*chromium-err*' -size +25M -exec rm -f {} ';'"
+    - name: Create a cronjob that checks how much disk space is used
+      cron:
+        name: "disk space usage"
+        minute: "0,15,30,45"
+        hour: "*"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        job: "/home/{{ os_user }}/extensions/utils/disk-usage-check.sh >> /home/{{ os_user }}/extensions/data/disk-usage-cron.log"
+    - name: Ensure disk-usage-check.sh is executable
+      file:
+        path: "/home/{{ os_user }}/extensions/utils/disk-usage-check.sh"
+        mode: a+x

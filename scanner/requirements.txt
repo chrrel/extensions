@@ -1,0 +1,5 @@
+pychrome>=0.2.3
+peewee>=3.13.1
+psutil>=5.6.5
+psycopg2>=2.8.4
+

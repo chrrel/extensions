@@ -1,0 +1,12 @@
+---
+- hosts: scanservers
+  order: sorted
+  vars_files:
+    - variables.yml
+  become: yes
+  become_user: "{{ os_user }}"
+  tasks:
+    - name: "Start the scanner's main script (in the background using screen)"
+      shell: /usr/bin/screen -d -m python3 main.py; sleep 2;
+      args:
+        chdir: "/home/{{ os_user }}/extensions/scanner"

@@ -1,0 +1,12 @@
+---
+- hosts: scanservers
+  vars_files:
+    - variables.yml
+  become: yes
+  become_user: "root"
+  tasks:
+    - name: Shell Echo
+      shell: du -cha --max-depth=1 / | grep -E "G|M"
+      register: shell_result
+    - debug:
+        var: shell_result.stdout_lines

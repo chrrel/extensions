@@ -1,0 +1,12 @@
+beautifulsoup4>=4.9.0
+matplotlib>=3.2.1
+networkx>=2.4
+nltk>=3.3
+pandas>=1.0.3
+peewee>=3.13.1
+psycopg2>=2.8.4
+requests>=2.23.0
+sshtunnel>=0.1.5
+tikzplotlib>=0.9.1
+tldextract>=2.2.1
+
